@@ -37,20 +37,21 @@ class Vehicle(Printable):
     ==========
 
     name: str, the name of the vehicle
-    source: str, the name of the starting tunnel end
-    destination: str, the name of the ending tunnel end
-    position: tuple(int,int), position of the vehicle
+    source: str, the name of the tunnel end the vehicle arrives at
+    destination: str, the name of the tunnel end the vehicle leaves from
+    arrival_time: float, time the vehicle arrived at the tunnel
+    position: tuple(float,float), position of the vehicle
     direction: int, 1 if moving right and -1 if moving left
-    speed: int, conrols the speed of the bus
+    size: str, size of the vehicle, either Large or Small
 
     Examples
     ========
 
     Create a vehicle:
 
-        >>> random10 = Vehicle('random10', 'East', 'West', (20, 0), 1, 1)
+        >>> random10 = Vehicle('random10', 'East', 'West', 9.0, (20, 0), 1, 'Small')
         >>> random10
-        Vehicle('random10', 'East', 'West', (20, 0), 1, 1)
+        Vehicle('random10', 'East', 'West', 9.0, (20, 0), 1, 'Small')
     
 
     All attributes are public:
@@ -58,7 +59,7 @@ class Vehicle(Printable):
         >>> random10.name
         'random10'
     """
-    parameters = 'name', 'source', 'destination', 'section', 'position', 'direction', 'speed', 'size'
+    parameters = 'name', 'source', 'destination', 'arrival_time', 'position', 'direction', 'size'
 
     def __init__(self, name, source, destination, arrival_time, position, direction, size):
 
@@ -74,33 +75,35 @@ class Vehicle(Printable):
         if direction not in {1, -1}:
             raise TypeError('direction should be 1 or -1')
         self.name = name
-        self.source = source # End of the tunnel the vehicle arrives at
-        self.destination = destination # End of the tunnel the vehicle exits from
+        self.source = source
+        self.destination = destination
         self.arrival_time = arrival_time
-        self.position = position # Current position of vehicle
+        self.position = position
         self.direction = direction
-        self.size = size # Large or Small
+        self.size = size
 
 
 class TunnelSection(Printable):
-    """Tunnel end with waiting vehicles
+    """Section of tunnel, two ens and a middle
 
     Parameters
     ==========
 
-    name: str, describes which end of the tunnel it is
+    name: str, describes which section of the tunnel it is
     position: tuple(int,int), coordinates of the tunnel end
-    vehicles: list[vehicles], list of the vehicles waiting at the stop
+    vehicles: list[vehicles], list of the vehicles in this section of the tunnel
+    for the middle section this is the vehicles travelling throught the tunnel
+    for the ends this is a list of vehicles waiting to enter the tunnel
 
     Examples
     ========
 
     Create a vehicle and add to the tunnel end:
 
-        >>> random10 = Vehicle('random10', 'East', 'West', (20, 0), 1, 1)
-        >>> tunnelend = TunnelEnd('East', (20, 0), [random10])
+        >>> random10 = Vehicle('random10', 'East', 'West', 9.0, (20, 0), 1, 'Small')
+        >>> tunnelend = TunnelSection('East', (20, 0), [random10])
         >>> tunnelend
-        TunnelEnd('East', (20, 0), [Vehicle('random10', 'East', 'West', (20, 0), 1, 1)])
+        TunnelSection('East', (20, 0), [Vehicle('random10', 'East', 'West', 9.0, (20, 0), 1, 'Small')])
 
     """
     parameters = 'name', 'position', 'vehicles'
@@ -129,39 +132,37 @@ class Tunnel(Printable):
     Parameters
     ==========
 
-    east_end: int, coordinate of east end of the tunnel
-    west_end: int, coordinate of west end of the tunnel
-    ends: list[TunnelEnd], list of tunnel ends
+    sections: list[TunnelSection], list of tunnel sections
     vehicles: list[Vehicles], list of the vehicles in the tunnel
-    rates: dict[str,float] (optional) rates of vehicles arriving
+    way: int, dictates which vehicles can enter the tunnel
 
 
     Examples
     ========
 
-    First create passengers, buses and bus stops:
+    First create the tunnel sections:
 
-        >>> random10 = Vehicle('random10', 'East', 'West', (20, 0), 1, 1)
-        >>> random11 = Vehicle('random11', 'West', 'East', (40, 0), 1, 1)
-        >>> tunnelends = [TunnelEnd('East', (20, 0), [random10]),
-        ...             TunnelEnd('West', (20, 0), [random11])]
+        >>> tunnel_sections = [
+        ...             TunnelSection('East', (1711, 0), []),
+        ...             TunnelSection('West', (0, 0), []),
+        ...             TunnelSection('Middle', (800, 0), [])]
 
-    Finally we are ready to create a complete tunnel model with 2 end and
-    2 vehicles:
+    Now we are ready to create a complete tunnel model:
 
-        >>> model = Tunnel(-50, 50, tunnelends, [random10, random11])
+        >>> model = Tunnel(tunnel_sections, [], 2)
 
     """
 
     def __init__(self, sections, vehicles, way):
         self.sections = list(sections) # West/East ends and the Middle of the tunnel
         self.vehicles = list(vehicles) # This includes waiting vehicles and vehicles within the tunnel
-        self.way = way # 2-way, 1-way or 0 traffic flow
+        self.way = way # Vehicles can enter from both ends (2-way), only 1 end (1-way),
+        # or no traffic can enter (0)
         # 1-way traffic flow has 4 different options:
-        # 10 - Traffic flowing from West to East is allowed to enter, there is no large vehicle
-        # 11 - Traffic flowing from East to West is allowed to enter, there is no large vehicle
-        # 12 - Traffic flowing from West to East is allowed to enter, there is a large vehicle
-        # 13 - Traffic flowing from East to West is allowed to enter, there is a large vehicle
+        # 10 - Traffic flowing from West to East is allowed to enter, there is no large vehicle in the tunnel
+        # 11 - Traffic flowing from East to West is allowed to enter, there is no large vehicle in the tunnel
+        # 12 - Traffic flowing from West to East is allowed to enter, there is a large vehicle in the tunnel
+        # 13 - Traffic flowing from East to West is allowed to enter, there is a large vehicle in the tunnel
         
 
     def init(self):
@@ -169,7 +170,7 @@ class Tunnel(Printable):
         self.time = 8
         self.vehicle_num = 0
         self.speed = 10 # Speed in metres/second
-        self.large = '' # Specifies which end has a large vehicle 
+        self.large = '' # Specifies which end has a large vehicle which is next due to enter the tunnel
 
     def update(self):
         # Each update equates to 1 second passing
@@ -210,6 +211,8 @@ class Tunnel(Printable):
                         events += self.update_entries(section)
                         
         elif self.way == 12:
+            if self.large == 'West':
+                self.large = ''
             self.speed = 7.6
             for section in self.sections:
                 if section.name == 'Middle':
@@ -220,6 +223,8 @@ class Tunnel(Printable):
                         events += self.update_entries(section)
                         
         elif self.way == 13:
+            if self.large == 'East':
+                self.large = ''
             self.speed = 7.6
             for section in self.sections:
                 if section.name == 'Middle':
@@ -230,6 +235,7 @@ class Tunnel(Printable):
                         events += self.update_entries(section)
                         
         elif self.way == 0:
+            self.speed = 9.6
             if self.large == 'West':
                 if all(v.direction == 1 for v in self.sections[2].vehicles):
                     # If all vehicles in the tunnel are travelling from West to East
@@ -287,24 +293,21 @@ class Tunnel(Printable):
         """Update simulation state of vehicle."""
         
         events = []
-        
-        for vehicle in middle.vehicles:
-            # Using speed input from vehicle class to accomidate different speeds
+        current_vehicles = middle.vehicles
+        for vehicle in current_vehicles:
             old_x, old_y = vehicle.position
             new_x = old_x + self.speed * vehicle.direction
             new_y = old_y  # vehicle moves horizontally
             vehicle.position = (new_x, new_y)
-    
-            events = []
 
-            # Does the vehicle reach the its destination?
+            # Does the vehicle reach its destination?
             for section in self.sections:
                 if section.name == vehicle.destination:
                     end_x, end_y = section.position
                     if old_x < end_x <= new_x or new_x < end_x <= old_x:
                         middle.vehicles.remove(vehicle)
                         self.vehicles.remove(vehicle)
-                        events.append(('exits', vehicle.name, vehicle.destination, self.time-vehicle.arrival_time))
+                        events.append(('exits', vehicle.name, vehicle.destination))
                         if vehicle.size == 'Large' and all(v.size == 'Small' for v in middle.vehicles):
                             # If the exiting vehicle is large and all the remaining
                             # vehicles in the tunnel are small
@@ -314,7 +317,6 @@ class Tunnel(Printable):
                             else:
                                 # Go back to 0 traffic flow if a large vehicle is waiting
                                 self.way = 0
-                            
 
         return events
 
@@ -327,7 +329,8 @@ class Tunnel(Printable):
         
         # New vehicles arrive randomly at each end of the tunnel. The probability of
         # a vehicle arriving within a given second is given by 1 - rate.
-        rate = 0.002
+        # Rate = the number of cars expected every second
+        rate = 0.02
         proportion_large = 0.2
         # This is the proportion of vehicles we expect to be 'Large' which will require 1 way traffic flow
         if rate > random.random():
