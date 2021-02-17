@@ -330,8 +330,8 @@ class Tunnel(Printable):
         # New vehicles arrive randomly at each end of the tunnel. The probability of
         # a vehicle arriving within a given second is given by 1 - rate.
         # Rate = the number of cars expected every second
-        rate = 0.02
-        proportion_large = 0.2
+        rate = 0.05
+        proportion_large = 0.04
         # This is the proportion of vehicles we expect to be 'Large' which will require 1 way traffic flow
         if rate > random.random():
             # A new vehicle randomly arrives. They want to go to the other end of the tunnel
@@ -366,11 +366,11 @@ class Tunnel(Printable):
         """Update vehicle that have entered the tunnel"""
 
         events = []
-
-        for vehicle in end.vehicles:
+        if len(end.vehicles) >= 1:
+            vehicle = end.vehicles[0]
             self.sections[2].vehicles.append(vehicle)
             events.append(('enters', vehicle.name, end.name, self.time-vehicle.arrival_time))
-        end.vehicles.clear()
+            end.vehicles.remove(vehicle)
                 
             
         return events
