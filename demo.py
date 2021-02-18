@@ -12,13 +12,13 @@ from objects import Vehicle, TunnelSection, Tunnel
 vehicles = []
 
 tunnel_sections = [
-    TunnelSection('East', (1711, 0), []),
-    TunnelSection('West', (0, 0), []),
-    TunnelSection('Middle', (800, 0), [])
+    TunnelSection('East', (1711, 0), [], []),
+    TunnelSection('West', (0, 0), [], []),
+    TunnelSection('Middle', (800, 0), [], [])
 ]
 
 
-model = Tunnel(tunnel_sections, vehicles, 2)
+model = Tunnel(tunnel_sections, vehicles, 2, 0)
 
 def main():
     all_events = []

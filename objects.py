@@ -108,7 +108,7 @@ class TunnelSection(Printable):
     """
     parameters = 'name', 'position', 'vehicles'
 
-    def __init__(self, name, position, vehicles):
+    def __init__(self, name, position, vehicles, stored_vehicles):
 
         if not isinstance(name, str):
             raise TypeError('name should be a string')
@@ -119,11 +119,14 @@ class TunnelSection(Printable):
             raise TypeError('vehicles should be a list of Vehicles')
         if not all(v.source == name for v in vehicles):
             raise ValueError('vehicle at the wrong end')
+        if not all(isinstance(v, Vehicle) for v in stored_vehicles):
+            raise TypeError('stored_vehicles should be a list of Vehicles')
 
         self.name = name
         self.position = position
         self.vehicles = list(vehicles) # List of vehicles in this tunnel section
         # i.e. waiting at tunnel end or in the tunnel
+        self.stored_vehicles = list(stored_vehicles)
 
 
 class Tunnel(Printable):
@@ -153,7 +156,7 @@ class Tunnel(Printable):
 
     """
 
-    def __init__(self, sections, vehicles, way):
+    def __init__(self, sections, vehicles, way, storage_capacity):
         self.sections = list(sections) # West/East ends and the Middle of the tunnel
         self.vehicles = list(vehicles) # This includes waiting vehicles and vehicles within the tunnel
         self.way = way # Vehicles can enter from both ends (2-way), only 1 end (1-way),
@@ -163,7 +166,7 @@ class Tunnel(Printable):
         # 11 - Traffic flowing from East to West is allowed to enter, there is no large vehicle in the tunnel
         # 12 - Traffic flowing from West to East is allowed to enter, there is a large vehicle in the tunnel
         # 13 - Traffic flowing from East to West is allowed to enter, there is a large vehicle in the tunnel
-        
+        self.storage_capacity = storage_capacity
 
     def init(self):
         # The simulation begins at 8:00am, when the stations open
@@ -220,6 +223,8 @@ class Tunnel(Printable):
                 else:
                     events += self.update_arrivals(section)
                     if section.name == 'West':
+                        if len(section.stored_vehicles) >=1:
+                            section.vehicles.append(section.stored_vehicles.pop())
                         events += self.update_entries(section)
                         
         elif self.way == 13:
@@ -232,6 +237,8 @@ class Tunnel(Printable):
                 else:
                     events += self.update_arrivals(section)
                     if section.name == 'East':
+                        if len(section.stored_vehicles) >=1:
+                            section.vehicles.append(section.stored_vehicles.pop())
                         events += self.update_entries(section)
                         
         elif self.way == 0:
@@ -337,12 +344,22 @@ class Tunnel(Printable):
             # A new vehicle randomly arrives. They want to go to the other end of the tunnel
             if proportion_large > random.random():
                 size = 'Large'
-                if self.large == '':
+                store_vehicle = False
+                if len(end.stored_vehicles) < self.storage_capacity and (self.way == 2 or self.way == 0):
+                    store_vehicle = True
+                elif self.way == 2 and self.large == '':
                     self.large = end.name
-                if self.way == 2:
                     self.way = 0
+                elif self.way == 0 and self.large == '':
+                    self.large = end.name
+                elif (self.way == 12 and end.name == 'East') or  (self.way == 13 and end.name == 'West'):
+                    if len(end.stored_vehicles) < self.storage_capacity:
+                        store_vehicle = True
+                    else:
+                        self.large = end.name    
             else:
                 size = 'Small'
+                store_vehicle = False
                     
             name = size + str(self.vehicle_num)
             self.vehicle_num += 1
@@ -354,11 +371,15 @@ class Tunnel(Printable):
             x_source, y_source = end.position
             x_destination, y_destination = destination.position
             direction = (x_destination-x_source)/abs(x_destination-x_source)
-
+            
             vehicle = Vehicle(name, end.name, destination.name, self.time, end.position, direction, size)
             self.vehicles.append(vehicle)
             events.append(('arrives', vehicle.name, end.name, self.time))
-            end.vehicles.append(vehicle)
+            if store_vehicle:
+                end.stored_vehicles.append(vehicle)
+                events.append(('stored', vehicle.name, end.name, self.time))
+            else:
+                end.vehicles.append(vehicle)
 
         return events
 
@@ -371,7 +392,8 @@ class Tunnel(Printable):
             self.sections[2].vehicles.append(vehicle)
             events.append(('enters', vehicle.name, end.name, self.time))
             end.vehicles.remove(vehicle)
-
+                
+            
         return events
 
 
