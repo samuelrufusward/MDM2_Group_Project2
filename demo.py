@@ -17,18 +17,25 @@ tunnel_sections = [
     TunnelSection('Middle', (800, 0), [])
 ]
 
+
 model = Tunnel(tunnel_sections, vehicles, 2)
 
-events = model.init()
-quit1 = 0
-while quit1 == 0:
-    if events != []:
-        print(events)
-    events = model.update()
+def main():
+    all_events = []
+    events = model.init()
+    quit1 = 0
 
+    while quit1 == 0:
+        if events != []:
+            print(events)
+            all_events.append(events)
+        events = model.update()
+        if events == "quit":
+
+            return all_events
 
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
-
+    #doctest.testmod()
+    main()

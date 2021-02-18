@@ -178,7 +178,7 @@ class Tunnel(Printable):
 
         # The simulation finishes at 8:00pm, when the stations close
         if self.time >= 20:
-            quit()
+            return "quit"
         
         events = []
         if self.way == 2:
@@ -307,7 +307,7 @@ class Tunnel(Printable):
                     if old_x < end_x <= new_x or new_x < end_x <= old_x:
                         middle.vehicles.remove(vehicle)
                         self.vehicles.remove(vehicle)
-                        events.append(('exits', vehicle.name, vehicle.destination))
+                        events.append(('exits', vehicle.name, vehicle.destination, self.time))
                         if vehicle.size == 'Large' and all(v.size == 'Small' for v in middle.vehicles):
                             # If the exiting vehicle is large and all the remaining
                             # vehicles in the tunnel are small
@@ -369,10 +369,9 @@ class Tunnel(Printable):
         if len(end.vehicles) >= 1:
             vehicle = end.vehicles[0]
             self.sections[2].vehicles.append(vehicle)
-            events.append(('enters', vehicle.name, end.name, self.time-vehicle.arrival_time))
+            events.append(('enters', vehicle.name, end.name, self.time))
             end.vehicles.remove(vehicle)
-                
-            
+
         return events
 
 
