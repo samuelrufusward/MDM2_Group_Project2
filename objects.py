@@ -127,6 +127,8 @@ class TunnelSection(Printable):
         self.vehicles = list(vehicles) # List of vehicles in this tunnel section
         # i.e. waiting at tunnel end or in the tunnel
         self.stored_vehicles = list(stored_vehicles)
+        self.longest_queue = 1
+        # Records the maximum length of self.vehciles for that day
 
 
 class Tunnel(Printable):
@@ -174,13 +176,18 @@ class Tunnel(Printable):
         self.vehicle_num = 0
         self.speed = 10 # Speed in metres/second
         self.large = '' # Specifies which end has a large vehicle which is next due to enter the tunnel
-
+        
     def update(self):
         # Each update equates to 1 second passing
         self.time += (1/3600)
 
         # The simulation finishes at 8:00pm, when the stations close
         if self.time >= 20:
+            print("Longest queue length:")
+            for section in self.sections:
+                if section.name != 'Middle':
+                    print(section.name)
+                    print(section.longest_queue)
             return "quit"
         
         events = []
@@ -381,12 +388,17 @@ class Tunnel(Printable):
             else:
                 end.vehicles.append(vehicle)
 
+        # Check to see how long the queue
+        if (len(end.vehicles) + len(end.stored_vehicles)) > end.longest_queue:
+            end.longest_queue = len(end.vehicles) + len(end.stored_vehicles)
+        
         return events
 
     def update_entries(self, end):
         """Update vehicle that have entered the tunnel"""
 
         events = []
+        # Let the next vehicle into the tunnel
         if len(end.vehicles) >= 1:
             vehicle = end.vehicles[0]
             self.sections[2].vehicles.append(vehicle)
