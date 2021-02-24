@@ -73,11 +73,3 @@ def get_average_wait_time_dict(vehicle_event_times_dict):
                               "large": average_large_vehicle_wait_time}
 
     return average_wait_time_dict
-
-all_events = main()
-
-events_dict = get_event_times_dict(all_events)
-
-average_wait_times_dict = get_average_wait_time_dict(events_dict)
-
-print(average_wait_times_dict)
