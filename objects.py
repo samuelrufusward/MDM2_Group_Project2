@@ -74,6 +74,8 @@ class Vehicle(Printable):
             raise TypeError('position should be a pair of ints')
         if direction not in {1, -1}:
             raise TypeError('direction should be 1 or -1')
+        if not isinstance(size, str):
+            raise TypeError('size should be a string')
         self.name = name
         self.source = source
         self.destination = destination
@@ -84,7 +86,7 @@ class Vehicle(Printable):
 
 
 class TunnelSection(Printable):
-    """Section of tunnel, two ens and a middle
+    """Section of tunnel, two ends and a middle
 
     Parameters
     ==========
@@ -92,8 +94,9 @@ class TunnelSection(Printable):
     name: str, describes which section of the tunnel it is
     position: tuple(int,int), coordinates of the tunnel end
     vehicles: list[vehicles], list of the vehicles in this section of the tunnel
-    for the middle section this is the vehicles travelling throught the tunnel
+    for the middle section this is the vehicles travelling through the tunnel
     for the ends this is a list of vehicles waiting to enter the tunnel
+    stored_vehicles: list[vehicles], list of the vehicles which have been 'stored' at the roadside
 
     Examples
     ========
@@ -106,7 +109,7 @@ class TunnelSection(Printable):
         TunnelSection('East', (20, 0), [Vehicle('random10', 'East', 'West', 9.0, (20, 0), 1, 'Small')])
 
     """
-    parameters = 'name', 'position', 'vehicles'
+    parameters = 'name', 'position', 'vehicles', 'stored_vehicles'
 
     def __init__(self, name, position, vehicles, stored_vehicles):
 
@@ -124,11 +127,10 @@ class TunnelSection(Printable):
 
         self.name = name
         self.position = position
-        self.vehicles = list(vehicles) # List of vehicles in this tunnel section
-        # i.e. waiting at tunnel end or in the tunnel
+        self.vehicles = list(vehicles)
         self.stored_vehicles = list(stored_vehicles)
         self.longest_queue = 1
-        # Records the maximum length of self.vehciles for that day
+        # Records the maximum length of self.vehicles for that day
 
 
 class Tunnel(Printable):
@@ -137,9 +139,15 @@ class Tunnel(Printable):
     Parameters
     ==========
 
-    sections: list[TunnelSection], list of tunnel sections
-    vehicles: list[Vehicles], list of the vehicles in the tunnel
+    sections: list[TunnelSection], list of tunnel sections, West/East ends and the Middle of the tunnel
+    vehicles: list[Vehicles], list of the vehicles in the tunnel and waiting to enter
     way: int, dictates which vehicles can enter the tunnel
+    Vehicles can enter from both ends (2-way), only 1 end (1-way), or no traffic can enter (0)
+    1-way traffic flow has 4 different options:
+    10 - Traffic flowing from West to East is allowed to enter, there is no large vehicle in the tunnel
+    11 - Traffic flowing from East to West is allowed to enter, there is no large vehicle in the tunnel
+    12 - Traffic flowing from West to East is allowed to enter, there is a large vehicle in the tunnel
+    13 - Traffic flowing from East to West is allowed to enter, there is a large vehicle in the tunnel
 
 
     Examples
@@ -159,23 +167,17 @@ class Tunnel(Printable):
     """
 
     def __init__(self, sections, vehicles, way, storage_capacity):
-        self.sections = list(sections) # West/East ends and the Middle of the tunnel
-        self.vehicles = list(vehicles) # This includes waiting vehicles and vehicles within the tunnel
-        self.way = way # Vehicles can enter from both ends (2-way), only 1 end (1-way),
-        # or no traffic can enter (0)
-        # 1-way traffic flow has 4 different options:
-        # 10 - Traffic flowing from West to East is allowed to enter, there is no large vehicle in the tunnel
-        # 11 - Traffic flowing from East to West is allowed to enter, there is no large vehicle in the tunnel
-        # 12 - Traffic flowing from West to East is allowed to enter, there is a large vehicle in the tunnel
-        # 13 - Traffic flowing from East to West is allowed to enter, there is a large vehicle in the tunnel
+        self.sections = list(sections)
+        self.vehicles = list(vehicles)
+        self.way = way 
         self.storage_capacity = storage_capacity
 
     def init(self):
         # The simulation begins at 8:00am, when the stations open
         self.time = 8
         self.vehicle_num = 0
-        self.speed = 10 # Speed in metres/second
-        self.large = '' # Specifies which end has a large vehicle which is next due to enter the tunnel
+        self.speed = 9.6 # Speed of vehicles in tunnel in metres/second
+        self.large = '' # Specifies which end has a large vehicle/ large vehicles which are due to enter the tunnel
         
     def update(self):
         # Each update equates to 1 second passing
@@ -304,7 +306,7 @@ class Tunnel(Printable):
         return events
 
     def update_middle(self, middle):
-        """Update simulation state of vehicle."""
+        """Update simulation state of vehicles in the tunnel."""
         
         events = []
         current_vehicles = middle.vehicles
