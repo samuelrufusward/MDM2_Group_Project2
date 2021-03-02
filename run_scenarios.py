@@ -11,13 +11,6 @@ tunnel_sections = [
 ]
 
 
-model1 = Tunnel(tunnel_sections, vehicles, 2, 0)
-model2 = Tunnel(tunnel_sections, vehicles, 2, 1)
-
-
-models = [model1, model2]
-
-
 def run(model):
     all_events = []
     events = model.init()
@@ -25,7 +18,7 @@ def run(model):
 
     while quit1 == 0:
         if events != []:
-            print(events)
+            #print(events)
             all_events.append(events)
         events = model.update()
         if events == "quit":
@@ -33,11 +26,79 @@ def run(model):
             return all_events
 
 
-for model in models:
-    all_events = run(model)
+def run_all_scenarios():
 
-    events_dict = get_event_times_dict(all_events)
+    model1_wait_times = []
 
-    average_wait_times_dict = get_average_wait_time_dict(events_dict)
+    for i in range(30):
 
-    print(average_wait_times_dict)
+        vehicles = []
+
+        tunnel_sections = [
+            TunnelSection('East', (1711, 0), [], []),
+            TunnelSection('West', (0, 0), [], []),
+            TunnelSection('Middle', (800, 0), [], [])
+        ]
+
+        model = Tunnel(tunnel_sections, vehicles, 2, 0)
+
+        events_list = run(model)
+
+        events_dict = get_event_times_dict(events_list)
+
+        average_wait_times_dict = get_average_wait_time_dict(events_dict)
+
+        model1_wait_times.append(average_wait_times_dict)
+
+    print(model1_wait_times)
+
+    model2_wait_times = []
+
+    for i in range(30):
+
+        vehicles = []
+
+        tunnel_sections = [
+            TunnelSection('East', (1711, 0), [], []),
+            TunnelSection('West', (0, 0), [], []),
+            TunnelSection('Middle', (800, 0), [], [])
+        ]
+
+        model = Tunnel(tunnel_sections, vehicles, 2, 1)
+
+        events_list = run(model)
+
+        events_dict = get_event_times_dict(events_list)
+
+        average_wait_times_dict = get_average_wait_time_dict(events_dict)
+
+        model2_wait_times.append(average_wait_times_dict)
+
+    print(model2_wait_times)
+
+
+    model3_wait_times = []
+
+    for i in range(30):
+
+        vehicles = []
+
+        tunnel_sections = [
+            TunnelSection('East', (1711, 0), [], []),
+            TunnelSection('West', (0, 0), [], []),
+            TunnelSection('Middle', (800, 0), [], [])
+        ]
+
+        model = Tunnel(tunnel_sections, vehicles, 2, 1)
+
+        events_list = run(model)
+
+        events_dict = get_event_times_dict(events_list)
+
+        average_wait_times_dict = get_average_wait_time_dict(events_dict)
+
+        model3_wait_times.append(average_wait_times_dict)
+
+    print(model3_wait_times)
+
+    return [model1_wait_times, model2_wait_times, model3_wait_times]
