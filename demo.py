@@ -2,7 +2,7 @@
 #  actors.py
 #
 #  This file defines classes that make up the main actors in a simulation of a
-#  bus picking up passengers from bus stops.
+#  tunnel.
 ##########################
 
 import random
@@ -18,7 +18,7 @@ tunnel_sections = [
 ]
 
 
-model = Tunnel(tunnel_sections, vehicles, 2, 0)
+model = Tunnel(tunnel_sections, vehicles, 2, 0, 0.05)
 
 def main():
     all_events = []

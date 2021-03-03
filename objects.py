@@ -2,7 +2,7 @@
 #  actors.py
 #
 #  This file defines classes that make up the main actors in a simulation of a
-#  bus picking up passengers from bus stops.
+#  tunnel.
 ##########################
 
 import random
@@ -166,11 +166,12 @@ class Tunnel(Printable):
 
     """
 
-    def __init__(self, sections, vehicles, way, storage_capacity):
+    def __init__(self, sections, vehicles, way, storage_capacity, arrival_rate):
         self.sections = list(sections)
         self.vehicles = list(vehicles)
         self.way = way 
         self.storage_capacity = storage_capacity
+        self.arrival_rate = arrival_rate
 
     def init(self):
         # The simulation begins at 8:00am, when the stations open
@@ -346,7 +347,7 @@ class Tunnel(Printable):
         # New vehicles arrive randomly at each end of the tunnel. The probability of
         # a vehicle arriving within a given second is given by 1 - rate.
         # Rate = the number of cars expected every second
-        rate = 0.05
+        rate = self.arrival_rate
         proportion_large = 0.04
         # This is the proportion of vehicles we expect to be 'Large' which will require 1 way traffic flow
         if rate > random.random():
