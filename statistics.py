@@ -57,7 +57,8 @@ def get_average_wait_time_dict(vehicle_event_times_dict):
         if "enters" not in vehicle_event_times_dict[vehicle] or "arrives" not in vehicle_event_times_dict[vehicle]:
             pass
         else:
-            waiting_time = vehicle_event_times_dict[vehicle]["enters"] - vehicle_event_times_dict[vehicle]["arrives"]
+            # Calculates waiting time in seconds
+            waiting_time = (vehicle_event_times_dict[vehicle]["enters"] - vehicle_event_times_dict[vehicle]["arrives"]) * 3600
             all_wait_times.append(waiting_time)
 
             if re.sub('[0-9]+', '', str(vehicle)) == "Small": # Checks if small vehicle
